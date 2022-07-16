@@ -1,0 +1,129 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false,
+    "definitions": {
+        "IConfigForDeployment": {
+            "additionalProperties": false,
+            "properties": {
+                "awsAccountId": {
+                    "type": "string"
+                },
+                "iamRoleName": {
+                    "type": "string"
+                },
+                "imageUri": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "oidcProvider": {
+                    "type": "string"
+                },
+                "serviceAccountName": {
+                    "type": "string"
+                },
+                "stackName": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "awsAccountId",
+                "imageUri",
+                "namespace",
+                "oidcProvider"
+            ],
+            "type": "object"
+        },
+        "IConfigMetricPermissions": {
+            "additionalProperties": false,
+            "properties": {
+                "actions": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "resources": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "actions",
+                "resources"
+            ],
+            "type": "object"
+        },
+        "IConfigMetricSectionLabels": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "type": "object"
+        },
+        "IConfigMetricsSection": {
+            "additionalProperties": false,
+            "properties": {
+                "frequency": {
+                    "type": "number"
+                },
+                "gaugeValue": {
+                    "type": "string"
+                },
+                "iamPermissions": {
+                    "$ref": "#/definitions/IConfigMetricPermissions"
+                },
+                "labels": {
+                    "$ref": "#/definitions/IConfigMetricSectionLabels"
+                },
+                "metricHelp": {
+                    "type": "string"
+                },
+                "metricName": {
+                    "type": "string"
+                },
+                "sdkClientName": {
+                    "type": "string"
+                },
+                "sdkCommand": {
+                    "type": "string"
+                },
+                "sdkCommandInput": {},
+                "sdkLibrary": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "frequency",
+                "metricHelp",
+                "metricName",
+                "sdkClientName",
+                "sdkCommand",
+                "sdkLibrary"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "deploymentConfig": {
+            "$ref": "#/definitions/IConfigForDeployment"
+        },
+        "metricPrefix": {
+            "type": "string"
+        },
+        "metrics": {
+            "items": {
+                "$ref": "#/definitions/IConfigMetricsSection"
+            },
+            "type": "array"
+        }
+    },
+    "required": [
+        "metricPrefix",
+        "metrics"
+    ],
+    "type": "object"
+}
+
