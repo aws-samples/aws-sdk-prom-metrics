@@ -1,13 +1,13 @@
 # Summary
 
-Have you ever needed the output of an AWS SDK Command to enrich your dashboards, or alerts in your environment?
+The AWS control plane contains a rich set of information that can be operationally very useful!  Have you ever found yourself wishing you had the output of an AWS SDK Command to enrich your dashboards or alerts?
 
-This project aims to make that easy by using a simple YAML configuration file.
+This project aims to make that easy by using a simple YAML configuration file to create a container that can be 'scraped' by Prometheus to produce metrics from AWS SDK Command outputs!
 
 Some common use cases:
-- Use the DescribeSubnets command to retrieve the remaining number of IP Addresses.
-- Use the DescribeFilesystems command for FSx for Lustre to determine the current state of a filesystem.
-- Use the ListServiceQuotasCommand command to determine how many ECS Tasks you're permitted to run in your account.
+- Use the `DescribeSubnets` command to retrieve the remaining number of IP Addresses.
+- Use the `DescribeFilesystems` command for FSx for Lustre to determine the current state of a filesystem.
+- Use the `ListServiceQuotasCommand` command to determine how many ECS Tasks you're permitted to run in your account.
 
 # Usage Types
 
