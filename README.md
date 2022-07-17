@@ -89,7 +89,7 @@ Run the command:
 make config=subnet-remaining-ips.yaml runLocal
 ```
 
-This will parse the configuration file and assure it is well formed.  It will install the required SDK libraries in the container, and run a container locally on port 4000 that will begin producing metrics!
+This will parse the configuration file and assure it is well-formed.  It will install the required SDK libraries, and run a node server locally on port 4000 that will begin producing metrics!
 
 Your output will look something like this:
 
@@ -122,9 +122,9 @@ This will look something like this:
 
 ## Build a container
 
-You should *always* [Test your configuration file](#testing-our-configuration-file) before building or deploying a container.  This will verify everything works correctly before a deployment!
+You should *always* [Test your configuration file](#testing-our-configuration-file) before building or deploying a container.  This will verify your configuration is well-formed and working!
 
-We've verified that our configuration file turns into a container that runs and collects the metrics we expect!  Now let's build our image.
+We've verified that our configuration file runs and collects the metrics we expect!  Now let's build a Docker image.
 
 ```text
 make config=subnet-remaining-ips.yaml docker
@@ -141,12 +141,149 @@ Your output will look something like this:
  => exporting to image                                                                                                                                                4.8s
  => => exporting layers                                                                                                                                               4.8s
  => => writing image sha256:f5e09affe74392864c61ecab1c775910151778f793af546e65fea8cc2a2e12f9                                                                          0.0s
- => => naming to docker.io/library/prom-aws-sdk-metrics:latest    
+ => => naming to docker.io/library/aws-prom-sdk-metrics:latest    
 ```
 
-A docker image will exist locally named 'prom-aws-sdk-metrics:latest' that you can now publish to a docker registry for deployment!
+A docker image will exist locally named `aws-sdk-prom-metrics:latest` that you can now publish to a docker registry for deployment!
 
-If you choose to use EKS, continue with the instructions.  If you're using another system you will need to run the built container in that system.  It will require access to an AWS Principal with permissions to run the SDK calls you've configured.  Once started a Prometheus operator will need to scrape for metrics on http port 4000 on the /metrics URL.
+If you choose to use EKS, continue with [TODO LINK].  If you're using another container orchestration environment you will need to run the built container in that system.  It will require access to an AWS Principal (role/user) with permissions to run the SDK calls you've configured.  Once started a Prometheus operator will need to scrape for metrics on http port 4000 on the `/metrics` URL.
+
+# Deploy to EKS
+
+Make sure you've [tested your configuration file](#testing-our-configuration-file) and [built a docker container](#build-a-container)
+
+## Push the container image to ECR
+
+Create an ECR registry in the region and account you're running your EKS cluster.  You can choose any name you like as long as you update your configuration file below.
+
+For our example let's make a new one called `aws-sdk-prom-metrics`.  Instructions are [here](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html)
+
+Now sign your Docker environment into your private registry following [these](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) instructions.
+
+After pushing your image, you should have the container image we created above available in your environment.
+
+## Update your configuration file
+
+The included example configuration files in the `config` directory all included commented out information relating to deployment.
+
+Uncomment / add the deployment section of the configuration like:
+
+```yaml
+deploymentConfig:
+  # Create / Determine your OIDC provider.  See: https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html
+  oidcProvider: oidc.eks.[region].amazonaws.com/id/[identifier]
+  # The namespace that will be used for our metric gathering container.  It will be created if it doesn't exist.
+  namespace: aws-sdk-prom-metrics
+  # Your AWS Account ID.  Used while constructing the roles trust information.
+  awsAccountId: "012345678910"
+  # The URI to retrieve the container image you built with 'make docker' and pushed to.
+  imageUri: 012345678910.dkr.ecr.[region].amazonaws.com/aws-sdk-prom-metrics:label
+  # The Service Account Name that will be created in the EKS cluster.
+  serviceAccountName: aws-sdk-prom-metrics
+```
+
+You must update `oidcProvider`, `awsAccountId`, and `imageUri`.  Assure the `awsAccountId` remains in quotes even though it's numeric!
+
+Uncomment / add the required permissions for each of the metrics you're collecting.  These permissions are used to create the role.  For example:
+
+```yaml
+    iamPermissions:
+      actions:
+        - ec2:DescribeSubnets
+      resources:
+        # You can limit this scope to specific Subnet resource ARNs if they are known up-front
+        - '*'
+```
+
+In Yaml the * needs to be quoted like shown - '*'.
+
+## Deploy the role
+
+This tool can use the AWS CDK to deploy a corectly formed role and policy for you automatically.
+
+NOTE: the default role name is `aws-sdk-prom-metrics-role` and default CloudFormation stack name is `aws-sdk-prom-metrics-role-stack`.  
+- To specify a different Role Name add `iamRoleName` with your chosen value to the `deploymentConfig` in your configuration file.
+- To specify a different CloudFormation stack name add `stackName` with your chosen value to the `deploymentConfig` in your configuration file.
+
+Deploy the role by running:
+
+```bash
+make config=subnet-remaining-ips.yaml deployRole
+```
+
+You should see output similar to this showing that CloudFormation (by way of the CDK) is deploying a role to your account!
+
+```text
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@ Using the CDK to deploy the IRSA IAM Role @@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+cdk deploy --require-approval=never
+
+✨  Synthesis time: 6.36s
+
+aws-sdk-prom-metrics-role-stack: deploying...
+aws-sdk-prom-metrics-role-stack: creating CloudFormation changeset...
+
+ ✅  aws-sdk-prom-metrics-role-stack
+
+✨  Deployment time: 34.1s
+```
+
+A benefit of using the CDK in this case is updated to your configuration file can be handled via a Stack update versus needing to destroy and start over.
+
+If you add more metrics, or make updates that would require an update to your IAM permissions, simply re-run the `deployRole` command as shown above!
+
+## Deploy the Kubernetes Deployment!
+
+We're on the last step!  This will create a new 'Deployment' in the namespace you've specified in your configuration file, using the IRSA role we created earlier.
+
+Run the command:
+
+```bash
+ make config=subnet-remaining-ips.yaml deployEks
+ ```
+
+You'll see output similar to this:
+
+```text
+...
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@ Using the kubectl API to deploy the namespace and metric-gather deployment @@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+npm run deployEks
+
+> aws-sdk-prom-metrics@0.0.1 deployEks
+> node build/deployer/lib/deployEks.js
+
+Creating namespace 'aws-sdk-prom-metrics'
+Creating Service Account named 'aws-sdk-prom-metrics'.
+Creating Deployment named 'aws-sdk-prom-metrics-collector-deployment'
+```
+
+After a few moments, describe the namespace, and you should see everything running!
+
+```bash
+kubectl get all -n aws-sdk-prom-metrics
+```
+
+Which should produce an output like:
+
+```text
+NAME                                                            READY   STATUS    RESTARTS   AGE
+pod/aws-sdk-prom-metrics-collector-deployment-879dbccb7-z6fsr   1/1     Running   0          43s
+
+NAME                                                        READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/aws-sdk-prom-metrics-collector-deployment   1/1     1            1           11m
+
+NAME                                                                  DESIRED   CURRENT   READY   AGE
+replicaset.apps/aws-sdk-prom-metrics-collector-deployment-879dbccb7   1         1         1       11m
+```
+
+You can also verify by port forwarding to port 4000 that your `/metrics` URL produces results!
+
+## In Prometheus
+
+Search within Prometheus for metrics starting with `awssdk` and you should see your new metric is flowing.
 
 ## Security
 
@@ -155,4 +292,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
-

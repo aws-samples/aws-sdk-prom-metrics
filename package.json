@@ -1,12 +1,14 @@
 {
-  "name": "prom-aws-sdk-metrics",
+  "name": "aws-sdk-prom-metrics",
+  "repository": "https://github.com/aws-samples/aws-sdk-prom-metrics",
+  "author": "Adam McLean",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
     "build": "tsc -p .",
     "prepareEnv": "node build/validator/lib/prepare.js",
     "validate": "node build/validator/lib/validate.js",
-    "deployK8s": "node build/deployer/lib/deployK8s.js"
+    "deployEks": "node build/deployer/lib/deployEks.js"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",

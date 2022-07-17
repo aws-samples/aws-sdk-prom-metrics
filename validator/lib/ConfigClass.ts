@@ -75,13 +75,13 @@ export class ConfigClass {
     this.config = this.configRaw as IConfig;
 
     this.deployRoleName =
-      this.config.deploymentConfig?.iamRoleName || "prom-aws-sdk-metrics-role";
+      this.config.deploymentConfig?.iamRoleName || "aws-sdk-prom-metrics-role";
     this.deployStackName =
       this.config.deploymentConfig?.stackName ||
-      "prom-aws-sdk-metrics-role-stack";
+      "aws-sdk-prom-metrics-role-stack";
     this.deployServiceAccountName =
       this.config.deploymentConfig?.serviceAccountName ||
-      "prom-aws-sdk-metrics";
+      "aws-sdk-prom-metrics-irsa";
   }
 
   allSdkLibrary() {

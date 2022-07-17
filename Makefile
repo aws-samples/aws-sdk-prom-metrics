@@ -13,7 +13,7 @@ docker: validate
 	@echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 	@echo "@@@ Creating Docker Image @@@"
 	@echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	docker build -t prom-aws-sdk-metrics:latest -f executor/Dockerfile .
+	docker build -t aws-sdk-prom-metrics:latest -f executor/Dockerfile .
 
 .PHONY: validate
 validate: prepareEnv
@@ -50,12 +50,12 @@ destroyRole:
 	@echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 	cdk destroy
 
-.PHONY: deployK8s
-deployK8s: build
+.PHONY: deployEks
+deployEks: build
 	@echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 	@echo "@@@ Using the kubectl API to deploy the namespace and metric-gather deployment @@@"
 	@echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	npm run deployK8s
+	npm run deployEks
 
 .PHONY: clean
 clean:

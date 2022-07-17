@@ -5,7 +5,7 @@ const createCollectDeployIfNotExists = async (
   k8sApi: k8s.AppsV1Api,
   config: ConfigClass
 ) => {
-  const deploymentName = "prom-aws-sdk-metrics-collector-deployment";
+  const deploymentName = "aws-sdk-prom-metrics-collector-deployment";
   const deploymentNamespace = config.config.deploymentConfig!.namespace;
   const deployResponse = await k8sApi.listNamespacedDeployment(
     deploymentNamespace
@@ -22,18 +22,18 @@ const createCollectDeployIfNotExists = async (
     await k8sApi.createNamespacedDeployment(deploymentNamespace, {
       metadata: {
         name: deploymentName,
-        labels: { app: `prom-aws-sdk-collect` },
+        labels: { app: `aws-sdk-prom-collect` },
       },
       spec: {
         replicas: 1,
         selector: {
           matchLabels: {
-            app: `prom-aws-sdk-metrics-collector`,
+            app: `aws-sdk-prom-metrics-collector`,
           },
         },
         template: {
           metadata: {
-            labels: { app: `prom-aws-sdk-metrics-collector` },
+            labels: { app: `aws-sdk-prom-metrics-collector` },
             annotations: {
               "prometheus.io/scrape": "true",
               "prometheus.io/port": "4000",
@@ -43,7 +43,7 @@ const createCollectDeployIfNotExists = async (
             serviceAccountName: config.deployServiceAccountName,
             containers: [
               {
-                name: "prom-aws-sdk-metrics-collector",
+                name: "aws-sdk-prom-metrics-collector",
                 image: config.config.deploymentConfig!.imageUri,
                 imagePullPolicy: "Always",
                 ports: [
