@@ -63,7 +63,7 @@ Install required libraries by running this command:
 npm install
 ```
 
-Configure the AWS ClI with credentials for your AWS Account (you can skip this step in Cloud9).  Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
+Configure the AWS CLI with credentials for your AWS Account (you can skip this step in Cloud9).  Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
 
 ## Deployment to an EKS Cluster Setup
 
@@ -284,6 +284,153 @@ You can also verify by port forwarding to port 4000 that your `/metrics` URL pro
 ## In Prometheus
 
 Search within Prometheus for metrics starting with `awssdk` and you should see your new metric is flowing.
+
+# Expanding on the examples provided
+
+If you have a novel use-case that exists outside the examples, you will need to create your own configuration file.
+
+## Identify the SDK Library
+
+Once you know the command you need to run, you'll need to identify the name of the JavaScritpt AWS SDK v3 library to use.
+
+Start with the documentation [here](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/index.html)
+
+The Clients list in the sidebar is the name that should be the value used for `sdkLibrary` in the configuration file.
+
+As an example if I was going to query a EFS Filesystem to determine the provisioned throughput, I'd use the value `@aws-sdk/client-efs`.
+
+## Identify the SDK Client
+
+Clicking on the SDK Library above will bring you to a details page.  Like [this](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-efs/index.html) for EFS.
+
+The name of the Client library used is our next parameter.  The SDK Libraries usually have two shown in the top right side-bar.  
+
+One client is usually a 'v2' compatible style, and the other is 'v3'.  We want the 'v3' one for our configuration file.
+
+The 'v3' one usually ends in `Client`.
+
+Continuing with our DynamoDB example we can see two 'Clients'.  One called `EFS` and the other called `EFSClient`.
+
+In this case we would use the value `EFSClient` for `sdkClientName` in our configuration file!
+
+## Identify the SDK Command to run
+
+Now we need to find the SDK command to run.  The list of commands are listed in the sidebar.  We can ignore the ones that end in `Input`, and `Output` and focus on the ones that end in `Command`.
+
+Since I want to Describe my filesystems, I search for describefilesystems and find the `DescribeFileSystemsCommand` command.
+
+In this example I would use `DescribeFileSystemsCommand` for `sdkCommand` in our configuration file.
+
+## Identify what values I want from the command
+
+Clicking the `DescribeFileSystemsCommand` I arrive at [this](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-efs/classes/describefilesystemscommand.html) page.
+
+Here I have links to the `DescribeFileSystemsCommandInput` and `DescribeFileSystemsCommandOutput`.  I click on the [link](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-efs/interfaces/describefilesystemscommandoutput.html) for `DescribeFileSystemsCommandOutput`.
+
+Here I see the response will contain metadata, and a `FileSystemDescription[]`.  Clicking the [link](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-efs/modules/filesystemdescription.html) to `FileSystemDescription` I finally see what I'm after: `ProvisionedThroughputInMibps`.
+
+Clicking the link to `ProvisionedThroughputInMibps` I can see the value is `undefined | number`.  Meaning I can use it for a Gauge value.
+
+## Create a JSON pointer
+
+Sometimes this can be challenging, but using the AWS CLI Can be helpful.
+
+```bash
+aws efs describe-file-systems --output json
+```
+
+This produces the same JSON File that our command will be interrogating which can make it a little easier to visualize
+
+```json
+{
+    "FileSystems": [
+        {
+            "OwnerId": "01234567890",
+            "CreationToken": "abcd-efgh",
+            "FileSystemId": "fs-abcdefgh",
+            "FileSystemArn": "arn:aws:elasticfilesystem:us-east-2:01234567890:file-system/fs-abcdefgh",
+            "CreationTime": "2022-06-02T09:33:06-04:00",
+            "LifeCycleState": "available",
+            "NumberOfMountTargets": 1,
+            "SizeInBytes": {
+                "Value": 28435683328,
+                "Timestamp": "2022-07-18T10:20:58-04:00",
+                "ValueInIA": 0,
+                "ValueInStandard": 28435683328
+            },
+            "PerformanceMode": "maxIO",
+            "Encrypted": false,
+            "ThroughputMode": "provisioned",
+            "ProvisionedThroughputInMibps": 1024.0,
+            "Tags": []
+        }
+    ]
+}
+```
+
+There are JSON pointer tutorials and 'testers' on the web that will let you paste your JSON output and test pointers until you get the data you want.  Just be careful not to paste any sensitive information into these sites!
+
+I arrive at the following JSON pointer to get the value I'm interested in `$.FileSystems[*].ProvisionedThroughputInMibps`
+
+The value of `$.FileSystems[*].ProvisionedThroughputInMibps` will be used as my `gaugeValue` in my configuration file.
+
+## Putting it all together
+
+Now my configuration file I've built would look like this:
+
+```yaml
+metricPrefix: awssdk
+
+metrics:
+  - frequency: 1
+    metricName: "efs_provisioned_throughput"
+    metricHelp: Provisioned Throughput of our EFS Filesystems in MiB/s
+    sdkLibrary: "@aws-sdk/client-efs"
+    sdkClientName: "EFSClient"
+    sdkCommand: "DescribeFileSystemsCommand"
+    gaugeValue: "$.FileSystems[*].ProvisionedThroughputInMibps"
+```
+
+I write this to a file named `testing.yaml` in my `config` directory and test it as outlined under [Testing](#testing-our-configuration-file) above.
+
+```bash
+make config=testing.yaml runLocal
+
+...
+npm run validate
+
+> aws-sdk-prom-metrics@0.0.1 validate
+> node build/validator/lib/validate.js
+
+Verifying values in our configuration file are correct. . . 
+
+
+No configuration errors present in 'testing.yaml'!  Recommend verifying using runLocal before deployment.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@ Running the node.js server locally.  Connect on http://localhost:4000/metrics @@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+node build/executor/lib/index.js
+server running on port 4000
+Running command for metric efs_provisioned_throughput
+Successfully executed command for metric efs_provisioned_throughput.  Converting to Prometheus metric values.
+```
+
+Verify we got some data from `/metrics`:
+
+```bash
+curl localhost:4000/metrics
+
+...
+# HELP awssdk_efs_provisioned_throughput Provisioned Throughput of our EFS Filesystems in MiB/s
+# TYPE awssdk_efs_provisioned_throughput gauge
+awssdk_efs_provisioned_throughput 1024
+```
+
+During testing you will get parsing / validation errors if your JSON pointer isn't correctly formed and / or the SDKs you've referenced don't exist.  The tool does it's very best to help you arrive at a syntax that works!
+
+## Create a PR with your example configuration file describing your use-case!
+
+Please create a pull request with your commented configuration file that describes your use-case for others to benefit from!
 
 ## Security
 
