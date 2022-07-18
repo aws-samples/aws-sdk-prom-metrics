@@ -297,7 +297,7 @@ Start with the documentation [here](https://docs.aws.amazon.com/AWSJavaScriptSDK
 
 The Clients list in the sidebar is the name that should be the value used for `sdkLibrary` in the configuration file.
 
-As an example if I was going to query a EFS Filesystem to determine the provisioned throughput, I'd use the value `@aws-sdk/client-efs`.
+As an example if I was going to query an EFS Filesystem to determine the provisioned throughput, I'd use the value `@aws-sdk/client-efs`.
 
 ## Identify the SDK Client
 
@@ -427,6 +427,8 @@ awssdk_efs_provisioned_throughput 1024
 ```
 
 During testing you will get parsing / validation errors if your JSON pointer isn't correctly formed and / or the SDKs you've referenced don't exist.  The tool does it's very best to help you arrive at a syntax that works!
+
+It's worth noting that some commands show their input as being 'optional' (ie `string | undefined`) however when they're executed, they will error out stating they require an input.  In this case the configuration file will pass validation, but will fail testing using `runLocal`.  Define the correct `sdkCommandInput` in the configuration files to address this.
 
 ## Create a PR with your example configuration file describing your use-case!
 
