@@ -67,6 +67,6 @@ if (!c.config.deploymentConfig) {
 
 new AwsPromRole(app, c.deployStackName, {
   config: c,
-  description: "Prometheus AWS CLI Metric Gather Role Stack",
+  description: "Prometheus AWS SDK Metric Gather Role Stack",
   synthesizer: new LegacyStackSynthesizer(),
 });

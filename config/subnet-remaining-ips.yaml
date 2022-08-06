@@ -2,17 +2,17 @@
 metricPrefix: awssdk
 
 # Uncomment and edit the section below if you wish to deploy to an EKS Cluster.
-deploymentConfig:
-  # Create / Determine your OIDC provider.  See: https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html
-  oidcProvider: oidc.eks.us-east-2.amazonaws.com/id/0DFDB5F669EDB2B87A9D0FD34EBE9877
-  # The namespace that will be used for our metric gathering container.  It will be created if it doesn't exist.
-  namespace: aws-sdk-prom-metrics
-  # Your AWS Account ID.  Used while constructing the roles trust information.
-  awsAccountId: "060720382957"
-  # The URI to retrieve the container image you built with 'make docker' and pushed to.
-  imageUri: 060720382957.dkr.ecr.us-east-2.amazonaws.com/prom-aws-sdk-metrics
-  # The Service Account Name that will be created in the EKS cluster.
-  serviceAccountName: aws-sdk-prom-metrics
+#deploymentConfig:
+#  # Create / Determine your OIDC provider.  See: https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html
+#  oidcProvider: oidc.eks.[region].amazonaws.com/id/[identifier]
+#  # The namespace that will be used for our metric gathering container.  It will be created if it doesn't exist.
+#  namespace: aws-sdk-prom-metrics
+#  # Your AWS Account ID.  Used while constructing the roles trust information.
+#  awsAccountId: "012345678910"
+#  # The URI to retrieve the container image you built with 'make docker' and pushed to.
+#  imageUri: 012345678910.dkr.ecr.[region].amazonaws.com/aws-sdk-prom-metrics:label
+#  # The Service Account Name that will be created in the EKS cluster.
+#  serviceAccountName: aws-sdk-prom-metrics
 
 metrics:
   # How often (in minutes) to run our SDK command
