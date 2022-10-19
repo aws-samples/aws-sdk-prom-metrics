@@ -71,11 +71,12 @@ Configure the kubectl command to point to your EKS Cluster.  Instructions [here]
 
 ## If you don't already have an EKS Cluster with Prometheus and Grafana
 
-The 'eksctl' tool can quickly get an EKS Cluster up and running.  A quickstart guide can be found [here](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-eksctl.html)
+Follow the steps outlined here:
 
-After you've got a running cluster you can add Amazon Managed Prometheus (AMP) by creating a workspace as outlined [here](https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-onboard-create-workspace.html) and using a helm chart to install Prometheus in your EKS Cluster as outlined [here](https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-onboard-ingest-metrics-new-Prometheus.html)
-
-To visualize and explore the collected metrics you can add Amazon Managed Grafana (AMG) by following this guide [here](https://docs.aws.amazon.com/grafana/latest/userguide/getting-started-with-AMG.html).  Once setup - configure AMP as a datasource as outlined [here](https://docs.aws.amazon.com/grafana/latest/userguide/AMP-adding-AWS-config.html)
+1. Create a Cloud9 Environment following all steps in the EKS Workshop section 'Start the Workshop...' here: [https://www.eksworkshop.com/020_prerequisites/](https://www.eksworkshop.com/020_prerequisites/)
+2. Create an EKS Cluster following all steps in the EKS Workshop section 'Launch using eksctl' section here: [https://www.eksworkshop.com/030_eksctl/](https://www.eksworkshop.com/030_eksctl/)
+3. Configure  / Install Amazon Managed Prometheus (AMP) on the cluster above by following the quickstart guide here: [https://aws.amazon.com/blogs/mt/getting-started-amazon-managed-service-for-prometheus/](https://aws.amazon.com/blogs/mt/getting-started-amazon-managed-service-for-prometheus/)
+4. Configure Amazon Managed Grafana with the AMP environment above as a data-source.  Quickstart guide here: [https://docs.aws.amazon.com/grafana/latest/userguide/getting-started-with-AMG.html](https://docs.aws.amazon.com/grafana/latest/userguide/getting-started-with-AMG.html)
 
 # Testing our configuration file
 
@@ -146,7 +147,7 @@ Your output will look something like this:
 
 A docker image will exist locally named `aws-sdk-prom-metrics:latest` that you can now publish to a docker registry for deployment!
 
-If you choose to use EKS, continue with [TODO LINK].  If you're using another container orchestration environment you will need to run the built container in that system.  It will require access to an AWS Principal (role/user) with permissions to run the SDK calls you've configured.  Once started a Prometheus operator will need to scrape for metrics on http port 4000 on the `/metrics` URL.
+If you choose to use EKS, continue with [deploy to EKS](#deploy-to-eks).  If you're using another container orchestration environment you will need to run the built container in that system.  It will require access to an AWS Principal (role/user) with permissions to run the SDK calls you've configured.  Once started a Prometheus operator will need to scrape for metrics on http port 4000 on the `/metrics` URL.
 
 # Deploy to EKS
 
@@ -161,6 +162,18 @@ For our example let's make a new one called `aws-sdk-prom-metrics`.  Instruction
 Now sign your Docker environment into your private registry following [these](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) instructions.
 
 After pushing your image, you should have the container image we created above available in your environment.
+
+The commands below will do this for you. Update the CONFIG_FILE variable to match the configuration file you're building and pushing.
+
+```bash
+export CONFIG_FILE=subnet-remaining-ips.yaml
+aws ecr create-repository --repository-name aws-sdk-prom-metrics
+export REPOSITORY_URI=$(aws ecr describe-repositories --repository-name aws-sdk-prom-metrics | jq -r '.repositories[0].repositoryUri')
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${REPOSITORY_URI}
+make config=${CONFIG_FILE} docker
+docker tag aws-sdk-prom-metrics:latest ${REPOSITORY_URI}:latest
+docker push ${REPOSITORY_URI}
+```
 
 ## Update your configuration file
 
@@ -195,11 +208,11 @@ Uncomment / add the required permissions for each of the metrics you're collecti
         - '*'
 ```
 
-In Yaml the * needs to be quoted like shown - '*'.
+In YAML the * needs to be quoted like shown - '*'.
 
 ## Deploy the role
 
-This tool can use the AWS CDK to deploy a corectly formed role and policy for you automatically.
+This tool can use the AWS CDK to deploy a correctly formed role and policy for you automatically.
 
 NOTE: the default role name is `aws-sdk-prom-metrics-role` and default CloudFormation stack name is `aws-sdk-prom-metrics-role-stack`.  
 - To specify a different Role Name add `iamRoleName` with your chosen value to the `deploymentConfig` in your configuration file.
@@ -229,13 +242,13 @@ aws-sdk-prom-metrics-role-stack: creating CloudFormation changeset...
 ✨  Deployment time: 34.1s
 ```
 
-A benefit of using the CDK in this case is updated to your configuration file can be handled via a Stack update versus needing to destroy and start over.
+A benefit of using the CDK in this case is updated to your configuration file can be handled via a Stack update versus needing to destroy and rebuild.
 
 If you add more metrics, or make updates that would require an update to your IAM permissions, simply re-run the `deployRole` command as shown above!
 
 ## Deploy the Kubernetes Deployment!
 
-We're on the last step!  This will create a new 'Deployment' in the namespace you've specified in your configuration file, using the IRSA role we created earlier.
+This will create a new 'Deployment' in the namespace you've specified in your configuration file, using the IRSA role we created earlier.
 
 Run the command:
 
