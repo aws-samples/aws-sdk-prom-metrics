@@ -26,6 +26,9 @@ jobs:
       run: |
         npm install
         npm run build
-        config=subnet-remaining-ips.yaml npm run validate
-        config=fsx-filesystem-availability.yaml npm run validate
-        config=eks-limits.yaml npm run validate
+        for config in [ subnet-remaining-ips.yaml fsx-filesystem-availability.yaml eks-limits.yaml ] ; do
+          rm -rf build/
+          rm -rf cdk.out/
+          npm run prepareEnv
+          npm run validate
+        done
