@@ -25,10 +25,10 @@ jobs:
     - name: Build
       run: |
         npm install
-        npm run build
-        for config in [ subnet-remaining-ips.yaml fsx-filesystem-availability.yaml eks-limits.yaml ] ; do
+        for config in `ls config` ; do
           rm -rf build/
           rm -rf cdk.out/
+          npm run build
           npm run prepareEnv
           npm run validate
         done
