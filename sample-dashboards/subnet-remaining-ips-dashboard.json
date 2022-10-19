@@ -1,0 +1,144 @@
+{
+  "description": "IP Addresses remaining in subnets.  Powered by 'aws-sdk-prom-metrics' and the DescribeSubnet AWS SDK.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "IP Addresses",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 9,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 255
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "exemplar": false,
+          "expr": "max by (subnet_id, availability_zone) (awssdk_remaining_ips{availability_zone=~\"${availability_zone}\"})",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "{{subnet_id}} - {{availability_zone}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Remaining IP Addresses",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 35,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "us-east-1b",
+          "value": "us-east-1b"
+        },
+        "datasource": {
+          "type": "prometheus"
+        },
+        "definition": "label_values(awssdk_remaining_ips{}, availability_zone)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Availability Zone",
+        "multi": false,
+        "name": "availability_zone",
+        "options": [],
+        "query": {
+          "query": "label_values(awssdk_remaining_ips{}, availability_zone)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "title": "AWS Prometheus SDK Example - Remaining IP Addresses",
+  "uid": "c3VibmV0LXJlbWFpbmluZy1pcHMK"
+}
