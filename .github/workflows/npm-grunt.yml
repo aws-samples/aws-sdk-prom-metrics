@@ -25,7 +25,8 @@ jobs:
     - name: Build
       run: |
         npm install
-        for config in `ls config` ; do
+        for config in `ls config/` ; do
+          export config
           rm -rf build/
           rm -rf cdk.out/
           npm run build
