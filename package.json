@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
-    "@types/node": "^17.0.45",
+    "@types/node": "^18.19.75",
     "aws-cdk": "^2.178.1",
     "json-schema-faker": "^0.5.8",
     "ts-json-schema-generator": "^1.5.1",
