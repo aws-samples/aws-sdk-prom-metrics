@@ -22,7 +22,7 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.22.3",
     "ajv": "^8.17.1",
-    "aws-cdk-lib": "2.178.1",
+    "aws-cdk-lib": "2.189.1",
     "constructs": "^10.0.0",
     "express": "^4.21.2",
     "json-stable-stringify": "^1.2.1",
